@@ -15,7 +15,7 @@ body {
 
 #countdownText { 
 	font: bold 60px Calibri,Helvetica,Verdana;
-	color: #white;
+	color: white;
 	letter-spacing: 1px;
 	margin-bottom: 20px;
 }
@@ -86,12 +86,12 @@ function clearCanvas(canvas) {
 function updateGraph() {
 	
 	var width = 500; 
-	var start = "Chartreuse";
-	var end = "Red";
 	var completed = "DarkSlateBlue";
 	var remainingGreen = "Chartreuse";
 	var remainingYellow = "Yellow";
 	var remainingRed = "Red";
+	var start = remainingGreen;
+	var end = remainingRed;
 
 	
 	var canvas = document.getElementById("countdownGraphCanvas");
@@ -112,7 +112,6 @@ function updateGraph() {
 		fullCircle( canvas, remainingGreen );
 		return;
 	}
-
 	
 	var remaining = remainingGreen;
 	if ( pctDone >= 0.75 ) remaining = remainingYellow;
@@ -129,10 +128,10 @@ function fullCircle(canvas, color) {
 		drawPie( canvas, 0.5, 0, color );
 }
 
+
 function countdown() {
 	
-	
-	// Bail if stop was hit
+	// Bail if timer is stopped
 	if ( ! isTimerRunning ) { return; }
 	
 	var margin = 0.25;
@@ -191,7 +190,6 @@ function start() {
 function finish() {
 	isTimerRunning = false;
 	finished = true;
-	endTime = 0;
 	$("#countdownText").html("Fin");
 	updateGraph();
 	$("#countdownGraph").off('click');
@@ -200,7 +198,6 @@ function finish() {
 
 $(document).ready( function() {
 
-	
 	$("#countdownText").text(getTimerDuration() + " minute countdown");
 
 	document.title = getTimerDuration() + "m timer";
