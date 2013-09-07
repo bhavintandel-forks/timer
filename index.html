@@ -20,36 +20,32 @@ body {
 	margin-bottom: 20px;
 }
 
-#timer { margin-bottom: 30px; font: normal 12px Helvetica,Verdana;  }
-
-#timer > input {
-	background: #334; 
-	color: white; 
-	-webkit-border-radius: 6px; 
-	text-align: center;
-	font: normal 12px Helvetica,Verdana;
-}
-
-#timerMinutes { border: 1px solid #556;  padding: 4px 6px; }
-#timerGo { padding: 4px 8px; letter-spacing: 1px;  border: 1px solid #556; }
-#timer > label { margin: 0 10px 0 5px ; }
 #countdownGraph {  padding: 10px; }
 
 </style>
 
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+</head>
+<body>
+
+<div id="countdownText"></div>
+
+<div id="countdownGraph">
+	<canvas id="countdownGraphCanvas"></canvas>
+</div>
 
 
 
 
 
 
+
+<script src="jquery-2.0.3.min.js"></script>
 
 <script type="text/javascript">
 
-console.log("hash = " + window.location.hash );
 
 var isTimerRunning = false;
+var finished = false;
 var startTime = 0;
 var endTime = 0;
 
@@ -90,10 +86,13 @@ function clearCanvas(canvas) {
 function updateGraph() {
 	
 	var width = 500; 
+	var start = "Chartreuse";
+	var end = "Red";
 	var completed = "DarkSlateBlue";
 	var remainingGreen = "Chartreuse";
 	var remainingYellow = "Yellow";
-	var remainingRed = "Red2";
+	var remainingRed = "Red";
+
 	
 	var canvas = document.getElementById("countdownGraphCanvas");
 	if ( !canvas.getContext ) { return; }
@@ -103,16 +102,21 @@ function updateGraph() {
 	
 	// If the countdown is over draw the completed circle
 	if ( now > endTime ) {
-		drawPie( canvas, 0, 0.5, completed );
-		drawPie( canvas, 0.5, 0, completed );
+		if ( finished ) fullCircle(canvas, end);
+		else fullCircle( canvas, start );
 		return;
 	}
 	
 	var pctDone = (now - startTime) / (endTime - startTime);
+	if ( pctDone < 0.005 ) {
+		fullCircle( canvas, remainingGreen );
+		return;
+	}
+
 	
 	var remaining = remainingGreen;
-	if ( pctDone >= 0.75 ) { remaining = remainingYellow };
-	if ( pctDone >= 0.9 ) { remaining = remainingRed };
+	if ( pctDone >= 0.75 ) remaining = remainingYellow;
+	if ( pctDone >= 0.9 ) remaining = remainingRed;
 	
 	clearCanvas( canvas );
 	drawPie( canvas, 0, pctDone, completed );
@@ -120,6 +124,10 @@ function updateGraph() {
 	
 }
 
+function fullCircle(canvas, color) {
+		drawPie( canvas, 0, 0.5, color );
+		drawPie( canvas, 0.5, 0, color );
+}
 
 function countdown() {
 	
@@ -130,25 +138,11 @@ function countdown() {
 	var margin = 0.25;
 	var now = new Date().getTime() + margin;
 	if ( endTime < now ) {
-		stop();
+		finish();
 		return; 
 	}
 	
-	var remaining = endTime - now;
-	var remainingSecs = Math.floor(remaining / 1000);
-	var remainingMinutes = Math.floor(remainingSecs / 60);
-	
-	var text = "";
-	if ( remainingMinutes < 1 ) {
-		if ( remainingSecs > 10 ) { remainingSecs-= (remainingSecs % 10); }
-		text = remainingSecs + " seconds left";
-	}
-	else if ( remainingMinutes == 1 ) {
-		text = "ONE minute left";
-	}
-	else {
-		text = remainingMinutes + " minutes left";
-	}		
+	var text = getCountdownText(endTime - now);
 	$("#countdownText").text( text );
 	
 	updateGraph();
@@ -158,15 +152,32 @@ function countdown() {
 }
 
 
+function getCountdownText(remainingMsecs) {
+	var remainingSecs = Math.floor(remainingMsecs / 1000);
+	var remainingMinutes = Math.floor(remainingSecs / 60);
+	
+	if ( remainingMinutes < 1 ) {
+		if ( remainingSecs > 10 ) { 
+			return (remainingSecs -= (remainingSecs % 10)) + "+ seconds left"
+		}
+		else {
+			return "only " + remainingSecs + " seconds left";
+		}
+	}
+	else {
+		return remainingMinutes + "+ minutes left";
+	}		
+}
 
 
+
+function getTimerDuration() { return window.location.hash.slice(1) || 3  }
 
 
 function start() {
 	isTimerRunning = true;
-	$("#timerGo").attr("value", "Stop");
 	
-	var minutes = $("#timerMinutes").val();
+	var minutes = getTimerDuration();
 	var duration = minutes * 60 * 1000;
 	var now = new Date().getTime();
 	startTime = now + (1000 - now % 1000);
@@ -177,57 +188,34 @@ function start() {
 }
 
 
-function stop() {
+function finish() {
 	isTimerRunning = false;
+	finished = true;
 	endTime = 0;
-	$("#countdownText").html("Done! Great job!");
-	$("#timerGo").attr("value", "Start");
+	$("#countdownText").html("Fin");
 	updateGraph();
+	$("#countdownGraph").off('click');
 }
 
 
 $(document).ready( function() {
+
 	
-	$("#timerGo").click( function() {
-		if ( isTimerRunning ) { stop(); }
+	$("#countdownText").text(getTimerDuration() + " minute countdown");
+
+	document.title = getTimerDuration() + "m timer";
+	
+	$("#countdownGraph").click( function() {
+		if ( isTimerRunning ) { window.location.reload(); }
 		else { start(); }
-		
 	});
-	
+
+	updateGraph();
 
 });
 
 
 </script>
-</head>
-<body>
-
-<form id="timer">
-<input name="timerMinutes" id="timerMinutes" type="text" size="4" value="10"></input>
-<label for="timerMinutes">minutes</label>
-<input value="Start" name="timerGo" id="timerGo" type="button"></input>
-</form>
-
-<div id="countdownText">Start The Timer</div>
-
-<div id="countdownGraph">
-	<canvas id="countdownGraphCanvas"></canvas>
-</div>
-
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
